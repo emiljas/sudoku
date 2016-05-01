@@ -11,11 +11,61 @@ namespace SudokuTests
     public class SudokuTests
     {
         [Fact]
-        public void Test()
+        public void SudokuSolvedByEliminatingValuesFromPeers()
         {
-            string simpleSudoku = "..3.2.6..9..3.5..1..18.64....81.29..7.......8..67.82....26.95..8..2.3..9..5.1.3..";
+            string simpleSudoku =
+                "..3.2.6.." +
+                "9..3.5..1" +
+                "..18.64.." +
+                "..81.29.." +
+                "7.......8" +
+                "..67.82.." +
+                "..26.95.." +
+                "8..2.3..9" +
+                "..5.1.3..";
+
+            string simpleSudokuSolution =
+                "483921657" +
+                "967345821" +
+                "251876493" +
+                "548132976" +
+                "729564138" +
+                "136798245" +
+                "372689514" +
+                "814253769" +
+                "695417382";
+
             var sudoku = new Sudoku(simpleSudoku);
-            Assert.Equal(@"483921657967345821251876493548132976729564138136798245372689514814253769695417382", sudoku.Solve());
+            Assert.Equal(simpleSudokuSolution, sudoku.Solve());
         }
+
+        //[Fact]
+        //public void SudokuSolvedBySearch()
+        //{
+        //    string difficultSudoku =
+        //        "4.....8.5" +
+        //        ".3......." +
+        //        "...7....." +
+        //        ".2.....6." +
+        //        "....8.4.." +
+        //        "....1...." +
+        //        "...6.3.7." +
+        //        "5..2....." +
+        //        "1.4......";
+
+        //    string difficultSudokuSolution =
+        //        "417369825" +
+        //        "632158947" +
+        //        "958724316" +
+        //        "825437169" +
+        //        "791586432" +
+        //        "346912758" +
+        //        "289643571" +
+        //        "573291684" +
+        //        "164875293";
+
+        //    var sudoku = new Sudoku(difficultSudoku);
+        //    Assert.Equal(difficultSudokuSolution, sudoku.Solve());
+        //}
     }
 }

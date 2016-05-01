@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace SudokuLib
 {
+    //TODO: spróbować wyeliminować uncheckedFilledSquares, testy wydajności?
     public class Sudoku
     {
         public const int SUDOKU_VALUES_LENGTH = 81;
@@ -17,7 +18,7 @@ namespace SudokuLib
         private Dictionary<string, List<int>> squareValues;
         private List<List<string>> units;
         private Dictionary<string, List<List<string>>> squareUnits;
-        private Dictionary<string, List<string>> squarePeers;
+        private Dictionary<string, HashSet<string>> squarePeers;
 
         public Sudoku(string sudokuStr)
         {
@@ -90,48 +91,154 @@ namespace SudokuLib
             foreach(var g in squares.GroupBy(s => s[1]))
                 units.Add(g.ToList());
 
-            new List<char[]>
+            var letterGroups = new List<char[]>
             {
                 new char[] { 'A', 'B', 'C' },
                 new char[] { 'D', 'E', 'F' },
                 new char[] { 'G', 'H', 'I' },
+            };
+
+            var digitGroups = new List<char[]>
+            {
+                new char[] { '1', '2', '3' },
+                new char[] { '4', '5', '6' },
+                new char[] { '7', '8', '9' },
+            };
+
+            foreach(char[] letterGroup in letterGroups)
+            {
+                foreach(char[] digitGroup in digitGroups)
+                {
+                    var unit = new List<string>();
+                    foreach(char letter in letterGroup)
+                    {
+                        foreach(char digit in digitGroup)
+                        {
+                            unit.Add(letter.ToString() + digit.ToString());
+                        }
+                    }
+                    units.Add(unit);
+                }
             }
+
+            return units;
         }
 
         private Dictionary<string, List<List<string>>> GenerateSquareUnitsDict()
         {
+            var dict = new Dictionary<string, List<List<string>>>();
+            foreach(string square in this.squares)
+                dict.Add(square, this.units.Where(u => u.Contains(square)).ToList());
+            return dict;
         }
 
-        private Dictionary<string, List<string>> GenerateSquarePeersDict()
+        private Dictionary<string, HashSet<string>> GenerateSquarePeersDict()
         {
-            var squarePeers = new Dictionary<string, List<string>>();
-            foreach(var square in this.squares)
+            var dict = new Dictionary<string, HashSet<string>>();
+            foreach(string square in this.squares)
             {
-                var peers = new List<string>();
-
-                foreach (var c in this.cols)
-                {
-                    string peer = square[0] + c;
-                    if(peer != square)
+                var units = this.squareUnits[square];
+                var peers = new HashSet<string>();
+                foreach(var unit in units)
+                    foreach(string peer in unit)
                         peers.Add(peer);
-                }
-
-                foreach (var r in this.rows)
-                {
-                    string peer = r + square[1];
-                    if(peer != square)
-                        peers.Add(peer);
-                }
-
-                squarePeers.Add(square, peers);
+                peers.Remove(square);
+                dict.Add(square, peers);
             }
-            //A2 - A1 A2 A3..
-            return squarePeers;
+            return dict;
         }
 
         public string Solve()
         {
-            return "";
+            ExcludeFilledValueFromPeers();
+
+            bool isSolved = this.squareValues.All(v => v.Value.Count == 1);
+            if(!isSolved)
+                this.squareValues = SearchForSolution();
+
+            return StringifySquaresValues();
+        }
+
+        private void ExcludeFilledValueFromPeers()
+        {
+            var uncheckedFilledSquares = new HashSet<string>();
+
+            this.squareValues
+                .Where(v => v.Value.Count == 1).ToList()
+                .ForEach(v => uncheckedFilledSquares.Add(v.Key));
+
+            while (uncheckedFilledSquares.Count > 0)
+            {
+                for (int i = uncheckedFilledSquares.Count - 1; i >= 0; i--)
+                {
+                    string square = uncheckedFilledSquares.ElementAt(i);
+                    ExcludeFilledValueFromPeers(uncheckedFilledSquares, square);
+                }
+            }
+        }
+
+        private void ExcludeFilledValueFromPeers(HashSet<string> uncheckedFilledSquares, string square)
+        {
+            var values = this.squareValues[square];
+            int value = values[0];
+            var peers = this.squarePeers[square];
+            foreach (var peer in peers)
+            {
+                var peerValues = this.squareValues[peer];
+                bool wasRemoved = peerValues.Remove(value);
+                if(wasRemoved && peerValues.Count == 1)
+                    uncheckedFilledSquares.Add(peer);
+            }
+            uncheckedFilledSquares.Remove(square);
+        }
+
+        private Dictionary<string, List<int>> SearchForSolution()
+        {
+            return SearchForSolution(this.squareValues);
+        }
+
+        private Dictionary<string, List<int>> SearchForSolution(Dictionary<string, List<int>> squaresValues)
+        {
+            var unfilledSquareField = squaresValues.OrderBy(kv => kv.Value.Count)
+                                                   .Where(kv => kv.Value.Count > 1)
+                                                   .FirstOrDefault();
+
+            if (unfilledSquareField.Equals(default(KeyValuePair<string, List<int>>)))
+                return squareValues;
+
+            foreach (int value in unfilledSquareField.Value)
+            {
+                string square = unfilledSquareField.Key;
+
+                var squareValuesToSearch = DictionaryUtils.Clone(squaresValues);
+                squareValuesToSearch[square] = new List<int> { value };
+
+                bool isConflict = this.squarePeers[unfilledSquareField.Key]
+                    .Where(p => squareValuesToSearch[p].Count == 1 && squareValuesToSearch[p][0] == value)
+                    .Count() > 0;
+
+                if (isConflict)
+                    continue;
+
+                var solution = SearchForSolution(squareValuesToSearch);
+                if (solution != null)
+                    return solution;
+            }
+
+            return null;
+        }
+
+        private Dictionary<string, List<int>> Clone(Dictionary<string, List<int>> dict)
+        {
+            return new Dictionary<string, List<int>>(dict);
+        }
+
+        private string StringifySquaresValues()
+        {
+            string ret = "";
+            foreach (var values in this.squareValues)
+                ret += values.Value[0].ToString();
+            return ret;
         }
     }
 }
