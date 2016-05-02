@@ -11,26 +11,25 @@ namespace SudokuLib
     {
         public const int SUDOKU_VALUES_LENGTH = 81;
 
-        private readonly string[] rows = new string[] { "A", "B", "C", "D", "E", "F", "G", "H", "I" };
-        private readonly string[] cols = new string[] { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
-        private string sudokuStr;
-        private List<string> squares;
-        private Dictionary<string, List<int>> squareValues;
-        private List<List<string>> units;
-        private Dictionary<string, List<List<string>>> squareUnits;
-        private Dictionary<string, HashSet<string>> squarePeers;
+        private static readonly string[] rows = new string[] { "A", "B", "C", "D", "E", "F", "G", "H", "I" };
+        private static readonly string[] cols = new string[] { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+        private static readonly List<string> squares;
+        private static readonly List<List<string>> units;
+        private static readonly Dictionary<string, List<List<string>>> squareUnits;
+        private static readonly  Dictionary<string, HashSet<string>> squarePeers;
 
-        public Sudoku(string sudokuStr)
+        private string sudokuStr;
+        private Dictionary<string, List<int>> squareValues;
+
+        static Sudoku()
         {
-            this.sudokuStr = sudokuStr;
-            this.squares = GenerateSquares();
-            this.squareValues = ParseSudokuStrToSquareValuesDict();
-            this.units = GenerateUnits();
-            this.squareUnits = GenerateSquareUnitsDict();
-            this.squarePeers = GenerateSquarePeersDict();
+            squares = GenerateSquares();
+            units = GenerateUnits();
+            squareUnits = GenerateSquareUnitsDict();
+            squarePeers = GenerateSquarePeersDict();
         }
 
-        private List<string> GenerateSquares()
+        private static List<string> GenerateSquares()
         {
             var squares = new List<string>();
             foreach (var r in rows)
@@ -38,6 +37,79 @@ namespace SudokuLib
                     squares.Add(r + c);
             System.Diagnostics.Debug.Assert(squares.Count == SUDOKU_VALUES_LENGTH);
             return squares;
+        }
+
+        private static List<List<string>> GenerateUnits()
+        {
+            var units = new List<List<string>>();
+
+            foreach(var g in squares.GroupBy(s => s[0]))
+                units.Add(g.ToList());
+
+            foreach(var g in squares.GroupBy(s => s[1]))
+                units.Add(g.ToList());
+
+            var letterGroups = new List<char[]>
+            {
+                new char[] { 'A', 'B', 'C' },
+                new char[] { 'D', 'E', 'F' },
+                new char[] { 'G', 'H', 'I' },
+            };
+
+            var digitGroups = new List<char[]>
+            {
+                new char[] { '1', '2', '3' },
+                new char[] { '4', '5', '6' },
+                new char[] { '7', '8', '9' },
+            };
+
+            foreach(char[] letterGroup in letterGroups)
+            {
+                foreach(char[] digitGroup in digitGroups)
+                {
+                    var unit = new List<string>();
+                    foreach(char letter in letterGroup)
+                    {
+                        foreach(char digit in digitGroup)
+                        {
+                            unit.Add(letter.ToString() + digit.ToString());
+                        }
+                    }
+                    units.Add(unit);
+                }
+            }
+
+            return units;
+        }
+
+        private static Dictionary<string, List<List<string>>> GenerateSquareUnitsDict()
+        {
+            var dict = new Dictionary<string, List<List<string>>>();
+            foreach(string square in squares)
+                dict.Add(square, units.Where(u => u.Contains(square)).ToList());
+            return dict;
+        }
+
+        private static Dictionary<string, HashSet<string>> GenerateSquarePeersDict()
+        {
+            var dict = new Dictionary<string, HashSet<string>>();
+            foreach(string square in squares)
+            {
+                var units = squareUnits[square];
+                var peers = new HashSet<string>();
+                foreach(var unit in units)
+                    foreach(string peer in unit)
+                        peers.Add(peer);
+                peers.Remove(square);
+                dict.Add(square, peers);
+            }
+            return dict;
+        }
+
+        public Sudoku(string sudokuStr)
+        {
+            this.sudokuStr = sudokuStr;
+            this.squareValues = ParseSudokuStrToSquareValuesDict();
         }
 
         private Dictionary<string, List<int>> ParseSudokuStrToSquareValuesDict()
@@ -81,73 +153,6 @@ namespace SudokuLib
             return sudokuValues;
         }
 
-        private List<List<string>> GenerateUnits()
-        {
-            var units = new List<List<string>>();
-
-            foreach(var g in squares.GroupBy(s => s[0]))
-                units.Add(g.ToList());
-
-            foreach(var g in squares.GroupBy(s => s[1]))
-                units.Add(g.ToList());
-
-            var letterGroups = new List<char[]>
-            {
-                new char[] { 'A', 'B', 'C' },
-                new char[] { 'D', 'E', 'F' },
-                new char[] { 'G', 'H', 'I' },
-            };
-
-            var digitGroups = new List<char[]>
-            {
-                new char[] { '1', '2', '3' },
-                new char[] { '4', '5', '6' },
-                new char[] { '7', '8', '9' },
-            };
-
-            foreach(char[] letterGroup in letterGroups)
-            {
-                foreach(char[] digitGroup in digitGroups)
-                {
-                    var unit = new List<string>();
-                    foreach(char letter in letterGroup)
-                    {
-                        foreach(char digit in digitGroup)
-                        {
-                            unit.Add(letter.ToString() + digit.ToString());
-                        }
-                    }
-                    units.Add(unit);
-                }
-            }
-
-            return units;
-        }
-
-        private Dictionary<string, List<List<string>>> GenerateSquareUnitsDict()
-        {
-            var dict = new Dictionary<string, List<List<string>>>();
-            foreach(string square in this.squares)
-                dict.Add(square, this.units.Where(u => u.Contains(square)).ToList());
-            return dict;
-        }
-
-        private Dictionary<string, HashSet<string>> GenerateSquarePeersDict()
-        {
-            var dict = new Dictionary<string, HashSet<string>>();
-            foreach(string square in this.squares)
-            {
-                var units = this.squareUnits[square];
-                var peers = new HashSet<string>();
-                foreach(var unit in units)
-                    foreach(string peer in unit)
-                        peers.Add(peer);
-                peers.Remove(square);
-                dict.Add(square, peers);
-            }
-            return dict;
-        }
-
         public string Solve()
         {
             ExcludeFilledValueFromPeers(this.squareValues);
@@ -188,7 +193,7 @@ namespace SudokuLib
                 return ExcludeFilledValueFromPeersStatus.Conflict;
 
             int value = values[0];
-            var peers = this.squarePeers[square];
+            var peers = squarePeers[square];
             foreach (var peer in peers)
             {
                 var peerValues = squareValues[peer];
