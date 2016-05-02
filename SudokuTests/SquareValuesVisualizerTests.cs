@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SudokuLib;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,25 +8,6 @@ using Xunit;
 
 namespace SudokuTests
 {
-    public class SquareValuesVisualizer
-    {
-        public static string Visualize(Dictionary<string, List<int>> squareValues)
-        {
-            string visualization = "";
-            var columnsWidths = (from sv in squareValues
-                     group sv.Value.Count by sv.Key[1] into column
-                     select new { ColumnNumber = column.Key, ColumnWidth = column.ToList().Max() })
-                    .OrderBy(c => c.ColumnNumber).Select(c => c.ColumnWidth).ToList();
-
-            foreach(var vk in squareValues.OrderBy(vk => vk.Key))
-            {
-                vk.
-            }
-
-            return visualization;
-        }
-    }
-
     public class SquareValuesVisualizerTests
     {
         [Fact]

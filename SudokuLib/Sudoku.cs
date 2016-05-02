@@ -150,7 +150,7 @@ namespace SudokuLib
 
         public string Solve()
         {
-            ExcludeFilledValueFromPeers();
+            ExcludeFilledValueFromPeers(this.squareValues);
 
             bool isSolved = this.squareValues.All(v => v.Value.Count == 1);
             if(!isSolved)
@@ -159,11 +159,11 @@ namespace SudokuLib
             return StringifySquaresValues();
         }
 
-        private void ExcludeFilledValueFromPeers()
+        private ExcludeFilledValueFromPeersStatus ExcludeFilledValueFromPeers(Dictionary<string, List<int>> squareValues)
         {
             var uncheckedFilledSquares = new HashSet<string>();
 
-            this.squareValues
+            squareValues
                 .Where(v => v.Value.Count == 1).ToList()
                 .ForEach(v => uncheckedFilledSquares.Add(v.Key));
 
@@ -172,24 +172,33 @@ namespace SudokuLib
                 for (int i = uncheckedFilledSquares.Count - 1; i >= 0; i--)
                 {
                     string square = uncheckedFilledSquares.ElementAt(i);
-                    ExcludeFilledValueFromPeers(uncheckedFilledSquares, square);
+                    var status = ExcludeFilledValueFromPeers(squareValues, uncheckedFilledSquares, square);
+                    if (status == ExcludeFilledValueFromPeersStatus.Conflict)
+                        return ExcludeFilledValueFromPeersStatus.Conflict;
                 }
             }
+
+            return ExcludeFilledValueFromPeersStatus.Done;
         }
 
-        private void ExcludeFilledValueFromPeers(HashSet<string> uncheckedFilledSquares, string square)
+        private ExcludeFilledValueFromPeersStatus ExcludeFilledValueFromPeers(Dictionary<string, List<int>> squareValues, HashSet<string> uncheckedFilledSquares, string square)
         {
-            var values = this.squareValues[square];
+            var values = squareValues[square];
+            if (values.Count == 0)
+                return ExcludeFilledValueFromPeersStatus.Conflict;
+
             int value = values[0];
             var peers = this.squarePeers[square];
             foreach (var peer in peers)
             {
-                var peerValues = this.squareValues[peer];
+                var peerValues = squareValues[peer];
                 bool wasRemoved = peerValues.Remove(value);
                 if(wasRemoved && peerValues.Count == 1)
                     uncheckedFilledSquares.Add(peer);
             }
             uncheckedFilledSquares.Remove(square);
+
+            return ExcludeFilledValueFromPeersStatus.Done;
         }
 
         private Dictionary<string, List<int>> SearchForSolution()
@@ -204,7 +213,7 @@ namespace SudokuLib
                                                    .FirstOrDefault();
 
             if (unfilledSquareField.Equals(default(KeyValuePair<string, List<int>>)))
-                return squareValues;
+                return squaresValues;
 
             foreach (int value in unfilledSquareField.Value)
             {
@@ -213,11 +222,9 @@ namespace SudokuLib
                 var squareValuesToSearch = DictionaryUtils.Clone(squaresValues);
                 squareValuesToSearch[square] = new List<int> { value };
 
-                bool isConflict = this.squarePeers[unfilledSquareField.Key]
-                    .Where(p => squareValuesToSearch[p].Count == 1 && squareValuesToSearch[p][0] == value)
-                    .Count() > 0;
+                var status = ExcludeFilledValueFromPeers(squareValuesToSearch);
 
-                if (isConflict)
+                if (status == ExcludeFilledValueFromPeersStatus.Conflict)
                     continue;
 
                 var solution = SearchForSolution(squareValuesToSearch);

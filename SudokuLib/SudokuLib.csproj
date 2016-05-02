@@ -42,7 +42,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DictionaryUtils.cs" />
+    <Compile Include="ExcludeFilledValueFromPeersStatus.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SquareValuesVisulizer.cs" />
     <Compile Include="Sudoku.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

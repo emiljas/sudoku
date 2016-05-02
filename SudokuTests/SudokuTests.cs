@@ -39,33 +39,33 @@ namespace SudokuTests
             Assert.Equal(simpleSudokuSolution, sudoku.Solve());
         }
 
-        //[Fact]
-        //public void SudokuSolvedBySearch()
-        //{
-        //    string difficultSudoku =
-        //        "4.....8.5" +
-        //        ".3......." +
-        //        "...7....." +
-        //        ".2.....6." +
-        //        "....8.4.." +
-        //        "....1...." +
-        //        "...6.3.7." +
-        //        "5..2....." +
-        //        "1.4......";
+        [Fact]
+        public void SudokuSolvedBySearch()
+        {
+            string difficultSudoku =
+                "4.....8.5" +
+                ".3......." +
+                "...7....." +
+                ".2.....6." +
+                "....8.4.." +
+                "....1...." +
+                "...6.3.7." +
+                "5..2....." +
+                "1.4......";
 
-        //    string difficultSudokuSolution =
-        //        "417369825" +
-        //        "632158947" +
-        //        "958724316" +
-        //        "825437169" +
-        //        "791586432" +
-        //        "346912758" +
-        //        "289643571" +
-        //        "573291684" +
-        //        "164875293";
+            string difficultSudokuSolution =
+                "417369825" +
+                "632158947" +
+                "958724316" +
+                "825437169" +
+                "791586432" +
+                "346912758" +
+                "289643571" +
+                "573291684" +
+                "164875293";
 
-        //    var sudoku = new Sudoku(difficultSudoku);
-        //    Assert.Equal(difficultSudokuSolution, sudoku.Solve());
-        //}
+            var sudoku = new Sudoku(difficultSudoku);
+            Assert.Equal(difficultSudokuSolution, sudoku.Solve());
+        }
     }
 }
