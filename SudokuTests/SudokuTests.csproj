@@ -61,6 +61,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DictionaryUtilsTests.cs" />
+    <Compile Include="PerformanceTests.cs" />
     <Compile Include="SquareValuesVisualizerTests.cs" />
     <Compile Include="SudokuTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

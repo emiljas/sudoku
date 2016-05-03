@@ -10,11 +10,9 @@ namespace SudokuLib
     {
         public static Dictionary<string, List<int>> Clone(Dictionary<string, List<int>> dict)
         {
-            var dictClone = new Dictionary<string, List<int>>(dict);
-            foreach(var vk in dict)
-            {
-                dictClone[vk.Key] = new List<int>(vk.Value);
-            }
+            var dictClone = new Dictionary<string, List<int>>(dict.Count);
+            foreach (var vk in dict)
+                dictClone.Add(vk.Key, new List<int>(vk.Value));
             return dictClone;
         }
     }

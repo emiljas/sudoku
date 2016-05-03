@@ -166,18 +166,11 @@ namespace SudokuLib
 
         private ExcludeFilledValueFromPeersStatus ExcludeFilledValueFromPeers(Dictionary<string, List<int>> squareValues)
         {
-            var uncheckedFilledSquares = new HashSet<string>();
-
-            squareValues
-                .Where(v => v.Value.Count == 1).ToList()
-                .ForEach(v => uncheckedFilledSquares.Add(v.Key));
-
-            while (uncheckedFilledSquares.Count > 0)
+            foreach (var vk in squareValues)
             {
-                for (int i = uncheckedFilledSquares.Count - 1; i >= 0; i--)
+                if (vk.Value.Count == 1)
                 {
-                    string square = uncheckedFilledSquares.ElementAt(i);
-                    var status = ExcludeFilledValueFromPeers(squareValues, uncheckedFilledSquares, square);
+                    var status = ExcludeFilledValueFromPeers(squareValues, vk.Key);
                     if (status == ExcludeFilledValueFromPeersStatus.Conflict)
                         return ExcludeFilledValueFromPeersStatus.Conflict;
                 }
@@ -186,11 +179,9 @@ namespace SudokuLib
             return ExcludeFilledValueFromPeersStatus.Done;
         }
 
-        private ExcludeFilledValueFromPeersStatus ExcludeFilledValueFromPeers(Dictionary<string, List<int>> squareValues, HashSet<string> uncheckedFilledSquares, string square)
+        private ExcludeFilledValueFromPeersStatus ExcludeFilledValueFromPeers(Dictionary<string, List<int>> squareValues, string square)
         {
             var values = squareValues[square];
-            if (values.Count == 0)
-                return ExcludeFilledValueFromPeersStatus.Conflict;
 
             int value = values[0];
             var peers = squarePeers[square];
@@ -198,10 +189,17 @@ namespace SudokuLib
             {
                 var peerValues = squareValues[peer];
                 bool wasRemoved = peerValues.Remove(value);
-                if(wasRemoved && peerValues.Count == 1)
-                    uncheckedFilledSquares.Add(peer);
+                if (peerValues.Count == 0)
+                    return ExcludeFilledValueFromPeersStatus.Conflict;
+
+                if (wasRemoved && peerValues.Count == 1)
+                {
+                    var status = ExcludeFilledValueFromPeers(squareValues, peer);
+                    if (status == ExcludeFilledValueFromPeersStatus.Conflict)
+                        return ExcludeFilledValueFromPeersStatus.Conflict;
+                }
+
             }
-            uncheckedFilledSquares.Remove(square);
 
             return ExcludeFilledValueFromPeersStatus.Done;
         }
@@ -227,7 +225,7 @@ namespace SudokuLib
                 var squareValuesToSearch = DictionaryUtils.Clone(squaresValues);
                 squareValuesToSearch[square] = new List<int> { value };
 
-                var status = ExcludeFilledValueFromPeers(squareValuesToSearch);
+                var status = ExcludeFilledValueFromPeers(squareValuesToSearch, square);
 
                 if (status == ExcludeFilledValueFromPeersStatus.Conflict)
                     continue;
@@ -238,11 +236,6 @@ namespace SudokuLib
             }
 
             return null;
-        }
-
-        private Dictionary<string, List<int>> Clone(Dictionary<string, List<int>> dict)
-        {
-            return new Dictionary<string, List<int>>(dict);
         }
 
         private string StringifySquaresValues()
