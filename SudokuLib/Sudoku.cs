@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SudokuLib
 {
@@ -211,11 +209,8 @@ namespace SudokuLib
 
         private Dictionary<string, List<int>> SearchForSolution(Dictionary<string, List<int>> squaresValues)
         {
-            var unfilledSquareField = squaresValues.OrderBy(kv => kv.Value.Count)
-                                                   .Where(kv => kv.Value.Count > 1)
-                                                   .FirstOrDefault();
-
-            if (unfilledSquareField.Equals(default(KeyValuePair<string, List<int>>)))
+            var unfilledSquareField = squaresValues.MinBy(kv => kv.Value.Count + (kv.Value.Count == 1 ? 10 : 0));
+            if (unfilledSquareField.Value.Count == 1)
                 return squaresValues;
 
             foreach (int value in unfilledSquareField.Value)
